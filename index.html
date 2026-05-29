@@ -3,79 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圆桌会谈 - 观众互动</title>
+    <title>2026 罗氏诊断中国 超有AI Day 互动端</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background-color: #f4f5f7; margin: 0; }
-        .container { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input[type="text"] { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        button { width: 100%; padding: 12px; border: none; border-radius: 5px; color: white; font-size: 16px; cursor: pointer; margin-bottom: 10px; font-weight: bold; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background-color: #f4f6f9; margin: 0; }
+        .container { max-width: 400px; margin: 20px auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); box-sizing: border-box; }
+        
+        /* 专属活动标题样式 */
+        .activity-title { text-align: center; color: #0052cc; margin: 0 0 25px 0; font-size: 20px; font-weight: bold; line-height: 1.4; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; }
+        input[type="text"] { width: 100%; padding: 14px; border: 1px solid #dfe1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: #f7f8fa; transition: all 0.2s; }
+        input[type="text"]:focus { border-color: #0052cc; background-color: #fff; outline: none; }
+        
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; color: white; font-size: 16px; cursor: pointer; margin-bottom: 12px; font-weight: bold; transition: opacity 0.2s; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-send { background-color: #0052cc; }
         .btn-like { background-color: #ff5630; }
-        .status { text-align: center; color: #666; font-size: 12px; margin-bottom: 15px; }
+        
         .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
-        <div id="status" class="status">正在安全连接互动通道...</div>
+        <div class="activity-title">2026 罗氏诊断中国<br>超有AI Day 互动端</div>
         
         <div class="form-group">
             <label for="userName">您的姓名：</label>
-            <input type="text" id="userName" placeholder="请输入姓名（必填）">
+            <input type="text" id="userName" placeholder="请输入姓名">
         </div>
         <div class="form-group">
             <label for="message">弹幕内容：</label>
             <input type="text" id="message" placeholder="想对嘉宾说什么？">
         </div>
+        
         <button class="btn-send" id="sendBtn" disabled>发送弹幕</button>
         <button class="btn-like" id="likeBtn" disabled>👍 给嘉宾点赞</button>
         <div id="toast" class="toast">发送成功！</div>
     </div>
 
     <script>
-        // ⚠️ 替换为你从 Supabase 复制的真实数据
-        // ⚠️ 已经替换为你项目真实的 Supabase 配置
-const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
+        const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
 
-        // 初始化 Supabase 客户端
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // 创建一个名为 "meeting-room" 的互动广播频道
         const channel = supabaseClient.channel('meeting-room', {
-            config: { broadcast: { self: true } } // 允许自己也收到广播（可选）
+            config: { broadcast: { self: true } }
         });
 
-        const statusDiv = document.getElementById('status');
         const sendBtn = document.getElementById('sendBtn');
         const likeBtn = document.getElementById('likeBtn');
         const userNameInput = document.getElementById('userName');
         const messageInput = document.getElementById('message');
         const toast = document.getElementById('toast');
 
-        // 订阅频道并监听连接状态
         channel.subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                statusDiv.innerText = "🟢 已通过443标准安全通道连接现场";
-                statusDiv.style.color = "green";
+                // 连接成功，静默解锁按钮，不展示提示词
                 sendBtn.disabled = false;
                 likeBtn.disabled = false;
-            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                statusDiv.innerText = "🔴 连接通道失败，请重试";
-                statusDiv.style.color = "red";
             }
         });
 
         function showToast(text) {
             toast.innerText = text;
             toast.style.display = 'block';
-            setTimeout(() => toast.style.display = 'none', 1500);
+            setTimeout(() => toast.style.display = 'none', 1200);
         }
 
-        // 广播消息的统一函数
         function sendInteraction(eventType, customPayload = {}) {
             channel.send({
                 type: 'broadcast',
@@ -88,20 +84,17 @@ const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
             });
         }
 
-        // 发送弹幕
         sendBtn.addEventListener('click', () => {
             const text = messageInput.value.trim();
             if (!text) { alert('弹幕内容不能为空！'); return; }
-            
             sendInteraction('danmaku', { text: text });
             messageInput.value = '';
             showToast('弹幕发射成功！');
         });
 
-        // 发送点赞
         likeBtn.addEventListener('click', () => {
             sendInteraction('like');
-            showToast('点赞 +1');
+            showToast('点赞成功！');
         });
     </script>
 </body>
