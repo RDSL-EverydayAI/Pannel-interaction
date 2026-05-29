@@ -3,16 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>圆桌会谈 - 大屏展示</title>
+    <title>2026 罗氏诊断中国 超有AI Day - 大屏互动</title>
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; }
-        #danmaku-container { position: absolute; top: 0; left: 0; width: 100vw; height: 60vh; pointer-events: none; }
-        .danmaku-item { position: absolute; white-space: nowrap; font-size: 36px; font-weight: bold; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); animation: fly-left linear forwards; }
-        @keyframes fly-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
-        #like-container { position: absolute; bottom: 50px; right: 50px; width: 150px; height: 80vh; pointer-events: none; }
-        .like-item { position: absolute; bottom: 0; background: linear-gradient(45deg, #ff5630, #ffab00); padding: 10px 20px; border-radius: 25px; font-size: 22px; white-space: nowrap; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 86, 48, 0.4); animation: float-up 2.5s ease-in forwards; }
-        @keyframes float-up { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { transform: translateY(-50px) scale(1.1); opacity: 1; } 100% { transform: translateY(-500px) scale(0.9); opacity: 0; } }
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            color: white; 
+            font-family: sans-serif; 
+            /* 🔗 核心替换：在这里换上你们活动主KV的图片链接，即可作为大屏全屏背景 */
+            background: #111 url('这里替换为你的活动主KV图片网址.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+        }
+        
+        /* 弹幕轨道容器（限制在屏幕上半部分，避免挡住台上的嘉宾） */
+        #danmaku-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 55vh; pointer-events: none; z-index: 10;
+        }
+
+        .danmaku-item {
+            position: absolute; white-space: nowrap; font-size: 38px; font-weight: bold;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
+            animation: fly-left linear forwards;
+        }
+        @keyframes fly-left {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* ✨ 改造：点赞容器扩充为全屏，以便从整个底部随机冒出 */
+        #like-container {
+            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5;
+        }
+
+        /* 点赞气泡样式与全屏升空动画 */
+        .like-item {
+            position: absolute; 
+            bottom: -60px; /* 从屏幕视野下方外面一点点开始绘制 */
+            padding: 10px 22px; 
+            border-radius: 30px; 
+            font-size: 24px; 
+            white-space: nowrap; 
+            font-weight: bold;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            animation: float-up-dynamic ease-out forwards;
+        }
+        @keyframes float-up-dynamic {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            10% { opacity: 1; transform: translateY(-100px) scale(1.1); }
+            85% { opacity: 1; }
+            100% { transform: translateY(-95vh) scale(0.85); opacity: 0; } /* 飞向接近屏幕顶部后消失 */
+        }
     </style>
 </head>
 <body>
@@ -20,16 +61,26 @@
     <div id="like-container"></div>
 
     <script>
-        // ⚠️ 必须保持与观众端完全相同的配置
-// ⚠️ 已经替换为你项目真实的 Supabase 配置
-const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
+        const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const danmakuContainer = document.getElementById('danmaku-container');
         const likeContainer = document.getElementById('like-container');
 
-        // 监听和订阅
+        // 随机池：丰富的点赞图标
+        const emojis = ['❤️', '👍', '🔥', '✨', '🎉', '🚀', '🌟', '👏', '🥳', '⚡', '💡', '🌈'];
+        
+        // 随机池：高级炫彩渐变背景色
+        const gradients = [
+            'linear-gradient(45deg, #ff5630, #ffab00)', // 橙红
+            'linear-gradient(45deg, #36b37e, #00b8d9)', // 绿蓝
+            'linear-gradient(45deg, #0052cc, #00b8d9)', // 罗氏蓝/科技蓝
+            'linear-gradient(45deg, #6554c0, #ff5630)', // 紫红
+            'linear-gradient(45deg, #ffab00, #ff5630)', // 金橙
+            'linear-gradient(45deg, #00b8d9, #6554c0)'  // 青紫
+        ];
+
         supabaseClient
             .channel('meeting-room')
             .on('broadcast', { event: 'danmaku' }, (response) => {
@@ -38,36 +89,49 @@ const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
             .on('broadcast', { event: 'like' }, (response) => {
                 createLike(response.payload.name);
             })
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log("大屏连接成功，正在安全接收全场互动...");
-                }
-            });
+            .subscribe();
 
         // 渲染弹幕
         function createDanmaku(name, text) {
             const div = document.createElement('div');
             div.className = 'danmaku-item';
             div.innerText = `${name}：${text}`;
+            
             const topPosition = Math.random() * 80 + 5; 
             div.style.top = `${topPosition}%`;
+            
             const colors = ['#FFF', '#FFD700', '#00FA9A', '#87CEFA', '#FF69B4', '#00FFFF'];
             div.style.color = colors[Math.floor(Math.random() * colors.length)];
-            const duration = Math.random() * 3 + 7;
+            
+            const duration = Math.random() * 3 + 7; // 7~10秒错落飞行
             div.style.animationDuration = `${duration}s`;
+            
             danmakuContainer.appendChild(div);
             setTimeout(() => { div.remove(); }, duration * 1000);
         }
 
-        // 渲染点赞
+        // ✨ 改造后的随机全屏底部点赞函数
         function createLike(name) {
             const div = document.createElement('div');
             div.className = 'like-item';
-            div.innerText = `❤️ ${name}`;
-            const offset = (Math.random() - 0.5) * 60;
-            div.style.right = `${offset}px`;
+            
+            // 1. 随机挑选一个趣味表情和渐变色
+            const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+            const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
+            
+            div.innerText = `${randomEmoji} ${name}`;
+            div.style.background = randomGradient;
+            
+            // 2. 核心：从屏幕底部 5% 到 85% 之间的任意水平位置冒出（防止贴边截断）
+            const randomLeft = Math.random() * 80 + 5;
+            div.style.left = `${randomLeft}%`;
+
+            // 3. 随机升空速度，产生错落层叠的灵动视觉感
+            const duration = Math.random() * 1.5 + 3; // 3s ~ 4.5s 之间
+            div.style.animationDuration = `${duration}s`;
+
             likeContainer.appendChild(div);
-            setTimeout(() => { div.remove(); }, 2500);
+            setTimeout(() => { div.remove(); }, duration * 1000);
         }
     </script>
 </body>
