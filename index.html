@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>圆桌会谈 - 观众互动</title>
-    <script src="mqtt.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: sans-serif; padding: 20px; background-color: #f4f5f7; margin: 0; }
         .container { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); box-sizing: border-box; }
@@ -20,7 +20,7 @@
 </head>
 <body>
     <div class="container">
-        <div id="status" class="status">正在连接互动服务器...</div>
+        <div id="status" class="status">正在安全连接互动通道...</div>
         
         <div class="form-group">
             <label for="userName">您的姓名：</label>
@@ -36,11 +36,18 @@
     </div>
 
     <script>
-        // ⚠️ 核心配置：定义一个全网唯一的频道名称（建议加入公司名和随机字符，防止被别人蹭频道）
-        const TOPIC = "your_company/2026/roundtable_meeting_xyz";
-        
-        // 连接 EMQX 国内公共 WebSocket 服务器
-        const client = mqtt.connect('ws://broker.emqx.io:8084/mqtt');
+        // ⚠️ 替换为你从 Supabase 复制的真实数据
+        // ⚠️ 已经替换为你项目真实的 Supabase 配置
+const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
+
+        // 初始化 Supabase 客户端
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // 创建一个名为 "meeting-room" 的互动广播频道
+        const channel = supabaseClient.channel('meeting-room', {
+            config: { broadcast: { self: true } } // 允许自己也收到广播（可选）
+        });
 
         const statusDiv = document.getElementById('status');
         const sendBtn = document.getElementById('sendBtn');
@@ -49,17 +56,17 @@
         const messageInput = document.getElementById('message');
         const toast = document.getElementById('toast');
 
-        // 连接成功回调
-        client.on('connect', () => {
-            statusDiv.innerText = "🟢 已成功连接互动现场";
-            statusDiv.style.color = "green";
-            sendBtn.disabled = false;
-            likeBtn.disabled = false;
-        });
-
-        client.on('error', (err) => {
-            statusDiv.innerText = "🔴 连接失败，请检查网络";
-            statusDiv.style.color = "red";
+        // 订阅频道并监听连接状态
+        channel.subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                statusDiv.innerText = "🟢 已通过443标准安全通道连接现场";
+                statusDiv.style.color = "green";
+                sendBtn.disabled = false;
+                likeBtn.disabled = false;
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                statusDiv.innerText = "🔴 连接通道失败，请重试";
+                statusDiv.style.color = "red";
+            }
         });
 
         function showToast(text) {
@@ -68,31 +75,32 @@
             setTimeout(() => toast.style.display = 'none', 1500);
         }
 
-        // 发送通用消息函数
-        function publishMessage(type, payload) {
-            const data = {
-                type: type,
-                name: userNameInput.value.trim() || '匿名观众',
-                ...payload,
-                timestamp: Date.now()
-            };
-            // 发布到指定频道
-            client.publish(TOPIC, JSON.stringify(data));
+        // 广播消息的统一函数
+        function sendInteraction(eventType, customPayload = {}) {
+            channel.send({
+                type: 'broadcast',
+                event: eventType,
+                payload: {
+                    name: userNameInput.value.trim() || '匿名观众',
+                    ...customPayload,
+                    timestamp: Date.now()
+                }
+            });
         }
 
-        // 弹幕按钮点击
+        // 发送弹幕
         sendBtn.addEventListener('click', () => {
             const text = messageInput.value.trim();
             if (!text) { alert('弹幕内容不能为空！'); return; }
             
-            publishMessage('danmaku', { text: text });
+            sendInteraction('danmaku', { text: text });
             messageInput.value = '';
             showToast('弹幕发射成功！');
         });
 
-        // 点赞按钮点击
+        // 发送点赞
         likeBtn.addEventListener('click', () => {
-            publishMessage('like', {});
+            sendInteraction('like');
             showToast('点赞 +1');
         });
     </script>
