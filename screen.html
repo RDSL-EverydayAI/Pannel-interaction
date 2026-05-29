@@ -4,43 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>圆桌会谈 - 大屏展示</title>
-    <script src="mqtt.min.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
-        body { 
-            margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; 
-        }
-        
-        /* 弹幕轨道容器：限制在屏幕上半部分 */
-        #danmaku-container {
-            position: absolute; top: 0; left: 0; width: 100vw; height: 60vh; pointer-events: none;
-        }
-
-        .danmaku-item {
-            position: absolute; white-space: nowrap; font-size: 36px; font-weight: bold;
-            text-shadow: 2px 2px 5px rgba(0,0,0,0.9);
-            animation: fly-left linear forwards;
-        }
-        @keyframes fly-left {
-            0% { transform: translateX(100vw); }
-            100% { transform: translateX(-100%); }
-        }
-
-        /* 点赞动画容器：右下角 */
-        #like-container {
-            position: absolute; bottom: 50px; right: 50px; width: 150px; height: 80vh; pointer-events: none;
-        }
-
-        .like-item {
-            position: absolute; bottom: 0; background: linear-gradient(45deg, #ff5630, #ffab00); padding: 10px 20px; 
-            border-radius: 25px; font-size: 22px; white-space: nowrap; font-weight: bold;
-            box-shadow: 0 4px 15px rgba(255, 86, 48, 0.4);
-            animation: float-up 2.5s ease-in forwards;
-        }
-        @keyframes float-up {
-            0% { transform: translateY(0) scale(0.6); opacity: 0; }
-            15% { transform: translateY(-50px) scale(1.1); opacity: 1; }
-            100% { transform: translateY(-500px) scale(0.9); opacity: 0; }
-        }
+        body { margin: 0; overflow: hidden; background-color: #111; color: white; font-family: sans-serif; }
+        #danmaku-container { position: absolute; top: 0; left: 0; width: 100vw; height: 60vh; pointer-events: none; }
+        .danmaku-item { position: absolute; white-space: nowrap; font-size: 36px; font-weight: bold; text-shadow: 2px 2px 5px rgba(0,0,0,0.9); animation: fly-left linear forwards; }
+        @keyframes fly-left { 0% { transform: translateX(100vw); } 100% { transform: translateX(-100%); } }
+        #like-container { position: absolute; bottom: 50px; right: 50px; width: 150px; height: 80vh; pointer-events: none; }
+        .like-item { position: absolute; bottom: 0; background: linear-gradient(45deg, #ff5630, #ffab00); padding: 10px 20px; border-radius: 25px; font-size: 22px; white-space: nowrap; font-weight: bold; box-shadow: 0 4px 15px rgba(255, 86, 48, 0.4); animation: float-up 2.5s ease-in forwards; }
+        @keyframes float-up { 0% { transform: translateY(0) scale(0.6); opacity: 0; } 15% { transform: translateY(-50px) scale(1.1); opacity: 1; } 100% { transform: translateY(-500px) scale(0.9); opacity: 0; } }
     </style>
 </head>
 <body>
@@ -48,54 +20,41 @@
     <div id="like-container"></div>
 
     <script>
-        // ⚠️ 必须保持与观众端完全一致的频道名称！
-        const TOPIC = "your_company/2026/roundtable_meeting_xyz";
-        
-        // 连接服务器
-        const client = mqtt.connect('ws://broker.emqx.io:8084/mqtt');
+        // ⚠️ 必须保持与观众端完全相同的配置
+// ⚠️ 已经替换为你项目真实的 Supabase 配置
+const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
 
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const danmakuContainer = document.getElementById('danmaku-container');
         const likeContainer = document.getElementById('like-container');
 
-        // 连接成功后，订阅该频道
-        client.on('connect', () => {
-            console.log("成功连接服务器，开始监听互动...");
-            client.subscribe(TOPIC);
-        });
-
-        // 收到频道消息时的处理逻辑
-        client.on('message', (topic, message) => {
-            try {
-                const data = JSON.parse(message.toString());
-                
-                if (data.type === 'danmaku') {
-                    createDanmaku(data.name, data.text);
-                } else if (data.type === 'like') {
-                    createLike(data.name);
+        // 监听和订阅
+        supabaseClient
+            .channel('meeting-room')
+            .on('broadcast', { event: 'danmaku' }, (response) => {
+                createDanmaku(response.payload.name, response.payload.text);
+            })
+            .on('broadcast', { event: 'like' }, (response) => {
+                createLike(response.payload.name);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log("大屏连接成功，正在安全接收全场互动...");
                 }
-            } catch (e) {
-                console.error("解析消息失败", e);
-            }
-        });
+            });
 
         // 渲染弹幕
         function createDanmaku(name, text) {
             const div = document.createElement('div');
             div.className = 'danmaku-item';
             div.innerText = `${name}：${text}`;
-            
-            // 随机高度（防止重叠）
             const topPosition = Math.random() * 80 + 5; 
             div.style.top = `${topPosition}%`;
-            
-            // 随机颜色
             const colors = ['#FFF', '#FFD700', '#00FA9A', '#87CEFA', '#FF69B4', '#00FFFF'];
             div.style.color = colors[Math.floor(Math.random() * colors.length)];
-
-            // 随机速度
-            const duration = Math.random() * 3 + 7; // 7-10秒
+            const duration = Math.random() * 3 + 7;
             div.style.animationDuration = `${duration}s`;
-
             danmakuContainer.appendChild(div);
             setTimeout(() => { div.remove(); }, duration * 1000);
         }
@@ -105,10 +64,8 @@
             const div = document.createElement('div');
             div.className = 'like-item';
             div.innerText = `❤️ ${name}`;
-            
             const offset = (Math.random() - 0.5) * 60;
             div.style.right = `${offset}px`;
-
             likeContainer.appendChild(div);
             setTimeout(() => { div.remove(); }, 2500);
         }
