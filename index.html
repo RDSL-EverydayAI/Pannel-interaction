@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>2026 罗氏诊断中国 超有AI Day - 互动点赞</title>
     <script src="supabase.js"></script>
     <style>
@@ -10,132 +10,167 @@
             --roche-blue: #0052cc;
             --roche-light-blue: #00b8d9;
             --like-red: #ff5630;
+            /* 定义一个接近 KV 背景的深色，用于图片未覆盖区域填充 */
+            --bg-fallback-color: #040810; 
+        }
+
+        /* 优化：显式定义 html 和 body 的高度，解决移动端 100vh 的各种坑 */
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* 防止身体滚动，只让 container 浮动 */
+            background-color: var(--bg-fallback-color);
         }
 
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            height: 100vh;
-            width: 100vw;
-            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* 🔗 核心美化：使用活动主KV做背景 */
-            background: #111 url('kv.jpg') no-repeat center center fixed; 
-            background-size: cover; 
+            position: relative;
         }
 
-        /* 增加一层深色遮罩，确保内容清晰 */
-        body::before {
-            content: '';
+        /* 🛠️ 核心美化与移动端优化：重新处理背景图 */
+        .bg-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            
+            /* 默认配置（大屏/PC）保持原有 cover 效果 */
+            background-image: url('kv.jpg');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
+        }
+
+        /* 🛠️ 增加一层渐变遮罩，使底部与背景色融合，顶部保留 KV */
+        .bg-overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.4);
-            z-index: 1;
+            z-index: 2;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(4,8,16,0.8) 70%, var(--bg-fallback-color) 100%);
+        }
+
+        /* 🛠️ 针对手机竖屏的特规优化 (Media Query) */
+        @media screen and (max-aspect-ratio: 1/1) {
+            .bg-layer {
+                /* 手机端改用 contain，保证全图完整显示，不裁剪 */
+                background-size: contain;
+                /* 图片靠顶显示 */
+                background-position: top center; 
+                background-color: var(--bg-fallback-color);
+            }
+            .bg-overlay {
+                /* 调整手机端的渐变，让图片下方更快融入背景色 */
+                background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(4,8,16,0.6) 40%, var(--bg-fallback-color) 70%);
+            }
         }
 
         .container { 
             position: relative;
-            z-index: 2; /* 浮在遮罩层之上 */
+            z-index: 10; /* 浮在背景和遮罩之上 */
             width: 85%;
-            max-width: 360px; 
-            background: rgba(255, 255, 255, 0.85); /* 半透明白色背景 */
-            padding: 30px 25px; 
+            max-width: 340px; 
+            background: rgba(255, 255, 255, 0.82); /* 稍微降低透明度提高对比度 */
+            padding: 25px; 
             border-radius: 20px; 
-            /* 🔗 高级毛玻璃效果 */
-            backdrop-filter: blur(10px); 
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            /* 毛玻璃效果 */
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
             box-sizing: border-box; 
             text-align: center;
+            
+            /* 移动端细微调整 */
+            margin-top: 10vh; /* 整体往下移一点，避开顶部可能被裁剪的 KV 核心区 */
         }
         
         /* 专属活动标题样式 */
         .activity-title { 
-            font-size: 18px; 
+            font-size: 19px; 
             font-weight: 800; 
-            line-height: 1.4; 
-            margin: 0 0 5px 0;
+            line-height: 1.3; 
+            margin: 0 0 25px 0; /* 增加了下边距，去掉subtitle后腾出空间 */
             background: linear-gradient(to right, var(--roche-blue), var(--roche-light-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .activity-subtitle {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 30px;
-            letter-spacing: 2px;
-        }
         
-        .form-group { margin-bottom: 30px; text-align: left;}
+        .form-group { margin-bottom: 25px; text-align: left;}
         label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; padding-left: 5px;}
         
         input[type="text"] { 
             width: 100%; 
-            padding: 16px; 
-            border: 2px solid rgba(0, 82, 204, 0.1); 
+            padding: 15px; 
+            border: 2px solid rgba(0, 82, 204, 0.08); 
             border-radius: 12px; 
             box-sizing: border-box; 
             font-size: 16px; 
             background-color: rgba(255, 255, 255, 0.7); 
             transition: all 0.3s ease;
             color: #333;
+            /* 解决 iOS input 默认内阴影和圆角问题 */
+            -webkit-appearance: none; 
         }
         input[type="text"]:focus { 
             border-color: var(--roche-blue); 
             background-color: #fff; 
             outline: none; 
-            box-shadow: 0 0 10px rgba(0, 82, 204, 0.1);
+            box-shadow: 0 0 12px rgba(0, 82, 204, 0.1);
         }
-        input[type="text"]::placeholder { color: #999; font-size: 14px; }
+        input[type="text"]::placeholder { color: #aaa; font-size: 14px; }
         
         /* 点赞按钮升级 */
         .btn-like { 
             width: 100%; 
             padding: 16px; 
             border: none; 
-            border-radius: 50px; /* 圆角按钮 */
+            border-radius: 50px; 
             color: white; 
             font-size: 18px; 
             cursor: pointer; 
             font-weight: bold; 
             background: linear-gradient(45deg, var(--like-red), #ff8f6d);
-            box-shadow: 0 5px 15px rgba(255, 86, 48, 0.3);
+            box-shadow: 0 6px 18px rgba(255, 86, 48, 0.35);
             transition: all 0.2s ease; 
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 10px;
+            /* 解决移动端点击高亮 */
+            -webkit-tap-highlight-color: transparent; 
         }
-        .btn-like:active { transform: scale(0.97); box-shadow: 0 2px 5px rgba(255, 86, 48, 0.3); }
-        .btn-like:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; opacity: 0.8;}
+        .btn-like:active { transform: scale(0.96); box-shadow: 0 3px 8px rgba(255, 86, 48, 0.3); }
+        .btn-like:disabled { background: #bbb !important; box-shadow: none; cursor: not-allowed; opacity: 0.8;}
         
-        /* 这里的加载动画和小图标 */
         .heart-icon { font-size: 20px; }
         
-        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 15px; font-weight: bold; position: absolute; left: 0; right: 0; bottom: 10px;}
+        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 15px; font-weight: bold;}
     </style>
 </head>
 <body>
+    <div class="bg-layer"></div>
+    <div class="bg-overlay"></div>
+
     <div class="container">
-        <div class="activity-title">2026 罗氏诊断中国</div>
-        <div class="activity-subtitle">超有AI Day 圆桌会谈</div>
-        
+        <div class="activity-title">2026 罗氏诊断中国<br>超有AI Day 圆桌会谈</div>
         <div class="form-group">
             <label for="userName">输入您的姓名参与互动：</label>
             <input type="text" id="userName" placeholder="点击输入（可选）" maxlength="10">
         </div>
         
         <button class="btn-like" id="likeBtn" disabled>
-            <span class="heart-icon">❤️</span> 给嘉宾点赞
+            正在连接...
         </button>
         <div id="toast" class="toast">❤️ 点赞成功！</div>
     </div>
 
     <script>
-        // 保持原来的 Supabase 逻辑，去掉弹幕发送的代码
         const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
 
@@ -148,19 +183,17 @@
         const userNameInput = document.getElementById('userName');
         const toast = document.getElementById('toast');
 
-        // 本地存储姓名，优化体验
         if(localStorage.getItem('roche_user_name')){
             userNameInput.value = localStorage.getItem('roche_user_name');
         }
 
         channel.subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                // 连接成功，静默解锁点赞按钮
                 likeBtn.disabled = false;
                 likeBtn.innerHTML = '<span class="heart-icon">❤️</span> 给嘉宾点赞';
             } else {
                 likeBtn.disabled = true;
-                likeBtn.innerText = '正在连接...';
+                likeBtn.innerText = '连接中...';
             }
         });
 
@@ -172,7 +205,6 @@
 
         function sendInteraction(eventType, customPayload = {}) {
             const name = userNameInput.value.trim() || '热心观众';
-            // 存储姓名
             if(userNameInput.value.trim()){
                 localStorage.setItem('roche_user_name', userNameInput.value.trim());
             }
@@ -188,12 +220,9 @@
             });
         }
 
-        // 仅保留点赞按钮点击事件
         likeBtn.addEventListener('click', () => {
             sendInteraction('like');
             showToast('❤️ 点赞成功！');
-            
-            // 简单的按钮点击动效
             likeBtn.style.transform = 'scale(0.95)';
             setTimeout(()=> likeBtn.style.transform = 'scale(1)', 100);
         });
