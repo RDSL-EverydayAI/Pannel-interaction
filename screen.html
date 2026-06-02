@@ -10,13 +10,53 @@
             margin: 0; 
             overflow: hidden; 
             color: white; 
-            font-family: sans-serif; 
-            /* 🔗 核心替换：在这里换上你们活动主KV的图片链接，即可作为大屏全屏背景 */
-            background: #111 url('KV.jpg') no-repeat center center fixed; 
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+            /* 🔗 确保同一目录下有 kv.jpg */
+            background: #111 url('kv.jpg') no-repeat center center fixed; 
             background-size: cover; 
         }
         
-        /* 弹幕轨道容器（限制在屏幕上半部分，避免挡住台上的嘉宾） */
+        /* 🛠️ 核心更新：累计点赞计数器调整至右下角 */
+        #like-counter-container {
+            position: absolute;
+            bottom: 40px; /* 距离底部 40px */
+            right: 40px;  /* 距离右侧 40px */
+            z-index: 100; /* 确保在最上层显示 */
+            background: rgba(0, 0, 0, 0.6); /* 稍微加深半透明背景，确保右下角看得很清晰 */
+            padding: 15px 25px;
+            border-radius: 15px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #like-counter-label {
+            font-size: 18px;
+            font-weight: bold;
+            color: rgba(255,255,255,0.8);
+            letter-spacing: 1px;
+        }
+
+        #like-counter {
+            font-size: 48px;
+            font-weight: 900;
+            color: #ff5630; 
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            text-shadow: 0 0 15px rgba(255, 86, 48, 0.7);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0% { text-shadow: 0 0 10px rgba(255, 86, 48, 0.5); }
+            50% { text-shadow: 0 0 25px rgba(255, 86, 48, 0.9); transform: scale(1.02); }
+            100% { text-shadow: 0 0 10px rgba(255, 86, 48, 0.5); }
+        }
+        
+        /* 弹幕轨道容器 */
         #danmaku-container {
             position: absolute; top: 0; left: 0; width: 100vw; height: 55vh; pointer-events: none; z-index: 10;
         }
@@ -31,7 +71,7 @@
             100% { transform: translateX(-100%); }
         }
 
-        /* ✨ 改造：点赞容器扩充为全屏，以便从整个底部随机冒出 */
+        /* 点赞容器 */
         #like-container {
             position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 5;
         }
@@ -39,7 +79,7 @@
         /* 点赞气泡样式与全屏升空动画 */
         .like-item {
             position: absolute; 
-            bottom: -60px; /* 从屏幕视野下方外面一点点开始绘制 */
+            bottom: -60px; 
             padding: 10px 22px; 
             border-radius: 30px; 
             font-size: 24px; 
@@ -52,11 +92,16 @@
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
             10% { opacity: 1; transform: translateY(-100px) scale(1.1); }
             85% { opacity: 1; }
-            100% { transform: translateY(-95vh) scale(0.85); opacity: 0; } /* 飞向接近屏幕顶部后消失 */
+            100% { transform: translateY(-95vh) scale(0.85); opacity: 0; } 
         }
     </style>
 </head>
 <body>
+    <div id="like-counter-container">
+        <div id="like-counter-label">累计点赞</div>
+        <div id="like-counter">0</div>
+    </div>
+
     <div id="danmaku-container"></div>
     <div id="like-container"></div>
 
@@ -67,18 +112,16 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         const danmakuContainer = document.getElementById('danmaku-container');
         const likeContainer = document.getElementById('like-container');
-
-        // 随机池：丰富的点赞图标
-        const emojis = ['❤️', '👍', '🔥', '✨', '🎉', '🚀', '🌟', '👏', '🥳', '⚡', '💡', '🌈'];
         
-        // 随机池：高级炫彩渐变背景色
+        let totalLikes = 0;
+        const likeCounterEl = document.getElementById('like-counter');
+
+        const emojis = ['❤️', '👍', '🔥', '✨', '🎉', '🚀', '🌟', '👏', '🥳', '⚡', '💡', '🌈'];
         const gradients = [
-            'linear-gradient(45deg, #ff5630, #ffab00)', // 橙红
-            'linear-gradient(45deg, #36b37e, #00b8d9)', // 绿蓝
-            'linear-gradient(45deg, #0052cc, #00b8d9)', // 罗氏蓝/科技蓝
-            'linear-gradient(45deg, #6554c0, #ff5630)', // 紫红
-            'linear-gradient(45deg, #ffab00, #ff5630)', // 金橙
-            'linear-gradient(45deg, #00b8d9, #6554c0)'  // 青紫
+            'linear-gradient(45deg, #ff5630, #ffab00)', 
+            'linear-gradient(45deg, #36b37e, #00b8d9)', 
+            'linear-gradient(45deg, #0052cc, #00b8d9)', 
+            'linear-gradient(45deg, #6554c0, #ff5630)'  
         ];
 
         supabaseClient
@@ -88,48 +131,49 @@
             })
             .on('broadcast', { event: 'like' }, (response) => {
                 createLike(response.payload.name);
+                
+                // 收到点赞消息，计数器增加并格式化展示
+                totalLikes++;
+                likeCounterEl.innerText = totalLikes.toLocaleString(); 
+                
+                // 数字实时跳动特效
+                likeCounterEl.style.animation = 'none';
+                likeCounterEl.offsetHeight; 
+                likeCounterEl.style.animation = 'pulse-red 0.5s ease-out'; 
+                setTimeout(()=>{
+                    likeCounterEl.style.animation = 'pulse-red 2s infinite'; 
+                }, 500);
             })
             .subscribe();
 
-        // 渲染弹幕
         function createDanmaku(name, text) {
             const div = document.createElement('div');
             div.className = 'danmaku-item';
             div.innerText = `${name}：${text}`;
-            
             const topPosition = Math.random() * 80 + 5; 
             div.style.top = `${topPosition}%`;
-            
             const colors = ['#FFF', '#FFD700', '#00FA9A', '#87CEFA', '#FF69B4', '#00FFFF'];
             div.style.color = colors[Math.floor(Math.random() * colors.length)];
-            
-            const duration = Math.random() * 3 + 7; // 7~10秒错落飞行
+            const duration = Math.random() * 3 + 7;
             div.style.animationDuration = `${duration}s`;
-            
             danmakuContainer.appendChild(div);
             setTimeout(() => { div.remove(); }, duration * 1000);
         }
 
-        // ✨ 改造后的随机全屏底部点赞函数
         function createLike(name) {
             const div = document.createElement('div');
             div.className = 'like-item';
-            
-            // 1. 随机挑选一个趣味表情和渐变色
             const randomEmoji = emojis[Math.floor(Math.random() * emojis.length)];
             const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
-            
             div.innerText = `${randomEmoji} ${name}`;
             div.style.background = randomGradient;
             
-            // 2. 核心：从屏幕底部 5% 到 85% 之间的任意水平位置冒出（防止贴边截断）
-            const randomLeft = Math.random() * 80 + 5;
+            // 🛠️ 优化：将随机范围限制在 5% 到 75% 之间，特意让出右下角区域给计数器
+            const randomLeft = Math.random() * 70 + 5;
             div.style.left = `${randomLeft}%`;
-
-            // 3. 随机升空速度，产生错落层叠的灵动视觉感
-            const duration = Math.random() * 1.5 + 3; // 3s ~ 4.5s 之间
+            
+            const duration = Math.random() * 1.5 + 3; 
             div.style.animationDuration = `${duration}s`;
-
             likeContainer.appendChild(div);
             setTimeout(() => { div.remove(); }, duration * 1000);
         }
