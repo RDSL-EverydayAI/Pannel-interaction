@@ -10,18 +10,15 @@
             --roche-blue: #0052cc;
             --roche-light-blue: #00b8d9;
             --like-red: #ff5630;
-            /* 定义一个接近 KV 背景的深色，用于图片未覆盖区域填充 */
-            --bg-fallback-color: #040810; 
         }
 
-        /* 优化：显式定义 html 和 body 的高度，解决移动端 100vh 的各种坑 */
         html, body {
             height: 100%;
             width: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* 防止身体滚动，只让 container 浮动 */
-            background-color: var(--bg-fallback-color);
+            overflow: hidden;
+            background-color: #0a0f1d; /* 极深底色兜底 */
         }
 
         body { 
@@ -32,103 +29,85 @@
             position: relative;
         }
 
-        /* 🛠️ 核心美化与移动端优化：重新处理背景图 */
-        .bg-layer {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-            
-            /* 默认配置（大屏/PC）保持原有 cover 效果 */
-            background-image: url('kv.jpg');
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: cover;
-        }
-
-        /* 🛠️ 增加一层渐变遮罩，使底部与背景色融合，顶部保留 KV */
-        .bg-overlay {
+        /* ✨ 优化1：全屏背景采用 KV 深度模糊，形成极其高级的流光背景，彻底告别黑块 */
+        .bg-blur-layer {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(4,8,16,0.8) 70%, var(--bg-fallback-color) 100%);
+            z-index: 1;
+            background: url('kv.jpg') no-repeat center center;
+            background-size: cover;
+            filter: blur(40px); /* 深度模糊 */
+            transform: scale(1.1); /* 放大一点防止边缘发白 */
+            opacity: 0.45; /* 降低透明度，柔和不刺眼 */
         }
 
-        /* 🛠️ 针对手机竖屏的特规优化 (Media Query) */
-        @media screen and (max-aspect-ratio: 1/1) {
-            .bg-layer {
-                /* 手机端改用 contain，保证全图完整显示，不裁剪 */
-                background-size: contain;
-                /* 图片靠顶显示 */
-                background-position: top center; 
-                background-color: var(--bg-fallback-color);
-            }
-            .bg-overlay {
-                /* 调整手机端的渐变，让图片下方更快融入背景色 */
-                background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(4,8,16,0.6) 40%, var(--bg-fallback-color) 70%);
-            }
-        }
-
+        /* 互动卡片窗口 */
         .container { 
             position: relative;
-            z-index: 10; /* 浮在背景和遮罩之上 */
-            width: 85%;
-            max-width: 340px; 
-            background: rgba(255, 255, 255, 0.82); /* 稍微降低透明度提高对比度 */
-            padding: 25px; 
-            border-radius: 20px; 
-            /* 毛玻璃效果 */
-            backdrop-filter: blur(15px); 
-            -webkit-backdrop-filter: blur(15px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
+            z-index: 10; 
+            width: 88%;
+            max-width: 350px; 
+            background: rgba(255, 255, 255, 0.9); /* 高级半透明白 */
+            border-radius: 24px; /* 优雅的大圆角 */
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3); 
             box-sizing: border-box; 
+            overflow: hidden; /* 🌟 极其关键：切掉顶部图片的直角，使其完美融入卡片圆角 */
+        }
+
+        /* ✨ 优化2：将 KV 融入窗口顶部，作为完美的横幅 Banner */
+        .kv-banner {
+            width: 100%;
+            padding-top: 56.25%; /* 保持 16:9 的标准黄金比例，任何手机看都绝不变形 */
+            background: url('kv.jpg') no-repeat center center;
+            background-size: cover;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 表单内容区 */
+        .content-box {
+            padding: 25px 22px;
             text-align: center;
-            
-            /* 移动端细微调整 */
-            margin-top: 10vh; /* 整体往下移一点，避开顶部可能被裁剪的 KV 核心区 */
         }
         
-        /* 专属活动标题样式 */
+        /* 活动标题 */
         .activity-title { 
-            font-size: 19px; 
+            font-size: 18px; 
             font-weight: 800; 
-            line-height: 1.3; 
-            margin: 0 0 25px 0; /* 增加了下边距，去掉subtitle后腾出空间 */
+            line-height: 1.4; 
+            margin: 0 0 25px 0;
             background: linear-gradient(to right, var(--roche-blue), var(--roche-light-blue));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
         
         .form-group { margin-bottom: 25px; text-align: left;}
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; padding-left: 5px;}
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; padding-left: 2px;}
         
         input[type="text"] { 
             width: 100%; 
-            padding: 15px; 
-            border: 2px solid rgba(0, 82, 204, 0.08); 
+            padding: 14px; 
+            border: 1px solid #dfe1e6; 
             border-radius: 12px; 
             box-sizing: border-box; 
             font-size: 16px; 
-            background-color: rgba(255, 255, 255, 0.7); 
+            background-color: #f7f8fa; 
             transition: all 0.3s ease;
             color: #333;
-            /* 解决 iOS input 默认内阴影和圆角问题 */
             -webkit-appearance: none; 
         }
         input[type="text"]:focus { 
             border-color: var(--roche-blue); 
             background-color: #fff; 
             outline: none; 
-            box-shadow: 0 0 12px rgba(0, 82, 204, 0.1);
         }
         input[type="text"]::placeholder { color: #aaa; font-size: 14px; }
         
-        /* 点赞按钮升级 */
+        /* 点赞按钮 */
         .btn-like { 
             width: 100%; 
-            padding: 16px; 
+            padding: 15px; 
             border: none; 
             border-radius: 50px; 
             color: white; 
@@ -136,38 +115,40 @@
             cursor: pointer; 
             font-weight: bold; 
             background: linear-gradient(45deg, var(--like-red), #ff8f6d);
-            box-shadow: 0 6px 18px rgba(255, 86, 48, 0.35);
+            box-shadow: 0 6px 18px rgba(255, 86, 48, 0.3);
             transition: all 0.2s ease; 
             display: flex;
             justify-content: center;
             align-items: center;
             gap: 10px;
-            /* 解决移动端点击高亮 */
             -webkit-tap-highlight-color: transparent; 
         }
-        .btn-like:active { transform: scale(0.96); box-shadow: 0 3px 8px rgba(255, 86, 48, 0.3); }
+        .btn-like:active { transform: scale(0.96); box-shadow: 0 3px 8px rgba(255, 86, 48, 0.2); }
         .btn-like:disabled { background: #bbb !important; box-shadow: none; cursor: not-allowed; opacity: 0.8;}
         
         .heart-icon { font-size: 20px; }
-        
-        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 15px; font-weight: bold;}
+        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 12px; font-weight: bold;}
     </style>
 </head>
 <body>
-    <div class="bg-layer"></div>
-    <div class="bg-overlay"></div>
+    <div class="bg-blur-layer"></div>
 
     <div class="container">
-        <div class="activity-title">2026 罗氏诊断中国<br>超有AI Day 圆桌会谈</div>
-        <div class="form-group">
-            <label for="userName">输入您的姓名参与互动：</label>
-            <input type="text" id="userName" placeholder="点击输入（可选）" maxlength="10">
+        <div class="kv-banner"></div>
+
+        <div class="content-box">
+            <div class="activity-title">2026 罗氏诊断中国<br>超有AI Day 圆桌会谈</div>
+            
+            <div class="form-group">
+                <label for="userName">输入您的姓名参与互动：</label>
+                <input type="text" id="userName" placeholder="点击输入（可选）" maxlength="10">
+            </div>
+            
+            <button class="btn-like" id="likeBtn" disabled>
+                正在连接...
+            </button>
+            <div id="toast" class="toast">❤️ 点赞成功！</div>
         </div>
-        
-        <button class="btn-like" id="likeBtn" disabled>
-            正在连接...
-        </button>
-        <div id="toast" class="toast">❤️ 点赞成功！</div>
     </div>
 
     <script>
