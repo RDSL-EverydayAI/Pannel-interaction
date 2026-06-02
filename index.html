@@ -2,48 +2,140 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 罗氏诊断中国 超有AI Day 互动端</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>2026 罗氏诊断中国 超有AI Day - 互动点赞</title>
     <script src="supabase.js"></script>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 20px; background-color: #f4f6f9; margin: 0; }
-        .container { max-width: 400px; margin: 20px auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.05); box-sizing: border-box; }
+        :root {
+            --roche-blue: #0052cc;
+            --roche-light-blue: #00b8d9;
+            --like-red: #ff5630;
+        }
+
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* 🔗 核心美化：使用活动主KV做背景 */
+            background: #111 url('kv.jpg') no-repeat center center fixed; 
+            background-size: cover; 
+        }
+
+        /* 增加一层深色遮罩，确保内容清晰 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            z-index: 1;
+        }
+
+        .container { 
+            position: relative;
+            z-index: 2; /* 浮在遮罩层之上 */
+            width: 85%;
+            max-width: 360px; 
+            background: rgba(255, 255, 255, 0.85); /* 半透明白色背景 */
+            padding: 30px 25px; 
+            border-radius: 20px; 
+            /* 🔗 高级毛玻璃效果 */
+            backdrop-filter: blur(10px); 
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            box-sizing: border-box; 
+            text-align: center;
+        }
         
         /* 专属活动标题样式 */
-        .activity-title { text-align: center; color: #0052cc; margin: 0 0 25px 0; font-size: 20px; font-weight: bold; line-height: 1.4; }
+        .activity-title { 
+            font-size: 18px; 
+            font-weight: 800; 
+            line-height: 1.4; 
+            margin: 0 0 5px 0;
+            background: linear-gradient(to right, var(--roche-blue), var(--roche-light-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .activity-subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 30px;
+            letter-spacing: 2px;
+        }
         
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; }
-        input[type="text"] { width: 100%; padding: 14px; border: 1px solid #dfe1e6; border-radius: 8px; box-sizing: border-box; font-size: 15px; background-color: #f7f8fa; transition: all 0.2s; }
-        input[type="text"]:focus { border-color: #0052cc; background-color: #fff; outline: none; }
+        .form-group { margin-bottom: 30px; text-align: left;}
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; font-size: 14px; padding-left: 5px;}
         
-        button { width: 100%; padding: 14px; border: none; border-radius: 8px; color: white; font-size: 16px; cursor: pointer; margin-bottom: 12px; font-weight: bold; transition: opacity 0.2s; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-send { background-color: #0052cc; }
-        .btn-like { background-color: #ff5630; }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 16px; 
+            border: 2px solid rgba(0, 82, 204, 0.1); 
+            border-radius: 12px; 
+            box-sizing: border-box; 
+            font-size: 16px; 
+            background-color: rgba(255, 255, 255, 0.7); 
+            transition: all 0.3s ease;
+            color: #333;
+        }
+        input[type="text"]:focus { 
+            border-color: var(--roche-blue); 
+            background-color: #fff; 
+            outline: none; 
+            box-shadow: 0 0 10px rgba(0, 82, 204, 0.1);
+        }
+        input[type="text"]::placeholder { color: #999; font-size: 14px; }
         
-        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 10px; font-weight: bold; }
+        /* 点赞按钮升级 */
+        .btn-like { 
+            width: 100%; 
+            padding: 16px; 
+            border: none; 
+            border-radius: 50px; /* 圆角按钮 */
+            color: white; 
+            font-size: 18px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            background: linear-gradient(45deg, var(--like-red), #ff8f6d);
+            box-shadow: 0 5px 15px rgba(255, 86, 48, 0.3);
+            transition: all 0.2s ease; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+        .btn-like:active { transform: scale(0.97); box-shadow: 0 2px 5px rgba(255, 86, 48, 0.3); }
+        .btn-like:disabled { background: #ccc; box-shadow: none; cursor: not-allowed; opacity: 0.8;}
+        
+        /* 这里的加载动画和小图标 */
+        .heart-icon { font-size: 20px; }
+        
+        .toast { display: none; text-align: center; color: #36b37e; font-size: 14px; margin-top: 15px; font-weight: bold; position: absolute; left: 0; right: 0; bottom: 10px;}
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="activity-title">2026 罗氏诊断中国<br>超有AI Day 互动端</div>
+        <div class="activity-title">2026 罗氏诊断中国</div>
+        <div class="activity-subtitle">超有AI Day 圆桌会谈</div>
         
         <div class="form-group">
-            <label for="userName">您的姓名：</label>
-            <input type="text" id="userName" placeholder="请输入姓名">
-        </div>
-        <div class="form-group">
-            <label for="message">弹幕内容：</label>
-            <input type="text" id="message" placeholder="想对嘉宾说什么？">
+            <label for="userName">输入您的姓名参与互动：</label>
+            <input type="text" id="userName" placeholder="点击输入（可选）" maxlength="10">
         </div>
         
-        <button class="btn-send" id="sendBtn" disabled>发送弹幕</button>
-        <button class="btn-like" id="likeBtn" disabled>👍 给嘉宾点赞</button>
-        <div id="toast" class="toast">发送成功！</div>
+        <button class="btn-like" id="likeBtn" disabled>
+            <span class="heart-icon">❤️</span> 给嘉宾点赞
+        </button>
+        <div id="toast" class="toast">❤️ 点赞成功！</div>
     </div>
 
     <script>
+        // 保持原来的 Supabase 逻辑，去掉弹幕发送的代码
         const SUPABASE_URL = "https://arvpflsuvqdlqejjpxig.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_SNXV6FFgIQ-glva5p_nV1w_hQQQelFS";
 
@@ -52,49 +144,58 @@
             config: { broadcast: { self: true } }
         });
 
-        const sendBtn = document.getElementById('sendBtn');
         const likeBtn = document.getElementById('likeBtn');
         const userNameInput = document.getElementById('userName');
-        const messageInput = document.getElementById('message');
         const toast = document.getElementById('toast');
+
+        // 本地存储姓名，优化体验
+        if(localStorage.getItem('roche_user_name')){
+            userNameInput.value = localStorage.getItem('roche_user_name');
+        }
 
         channel.subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                // 连接成功，静默解锁按钮，不展示提示词
-                sendBtn.disabled = false;
+                // 连接成功，静默解锁点赞按钮
                 likeBtn.disabled = false;
+                likeBtn.innerHTML = '<span class="heart-icon">❤️</span> 给嘉宾点赞';
+            } else {
+                likeBtn.disabled = true;
+                likeBtn.innerText = '正在连接...';
             }
         });
 
         function showToast(text) {
             toast.innerText = text;
             toast.style.display = 'block';
-            setTimeout(() => toast.style.display = 'none', 1200);
+            setTimeout(() => toast.style.display = 'none', 1500);
         }
 
         function sendInteraction(eventType, customPayload = {}) {
+            const name = userNameInput.value.trim() || '热心观众';
+            // 存储姓名
+            if(userNameInput.value.trim()){
+                localStorage.setItem('roche_user_name', userNameInput.value.trim());
+            }
+            
             channel.send({
                 type: 'broadcast',
                 event: eventType,
                 payload: {
-                    name: userNameInput.value.trim() || '匿名观众',
+                    name: name,
                     ...customPayload,
                     timestamp: Date.now()
                 }
             });
         }
 
-        sendBtn.addEventListener('click', () => {
-            const text = messageInput.value.trim();
-            if (!text) { alert('弹幕内容不能为空！'); return; }
-            sendInteraction('danmaku', { text: text });
-            messageInput.value = '';
-            showToast('弹幕发射成功！');
-        });
-
+        // 仅保留点赞按钮点击事件
         likeBtn.addEventListener('click', () => {
             sendInteraction('like');
-            showToast('点赞成功！');
+            showToast('❤️ 点赞成功！');
+            
+            // 简单的按钮点击动效
+            likeBtn.style.transform = 'scale(0.95)';
+            setTimeout(()=> likeBtn.style.transform = 'scale(1)', 100);
         });
     </script>
 </body>
